@@ -7,16 +7,10 @@
 
 int main(void)
 {
-    Nnum n1 = initNnum(69);
-    Nnum n2 = initNnum(420);
-    Nnum n3 = initNnum(69 + 420);
+    Nnum *n1 = initNnum(0x11111111);
+    print_num((_num *)n1);
 
-    printNnum(n1);
-    printNnum(n2);
-    printNnum(n3);
-
-    Nnum sum = addNnums(n1, n2);
-    printNnum(sum);
+    free_num((_num *)n1);
 
     return 0;
 }

@@ -24,8 +24,11 @@ $(TIMING_TARGET): timing_wrapper.o
 run: $(TARGET) # Rule to run the executable
 	./main
 
-timer: $(TARGET) $(TIMER_TARGET) # Rule to run the executable
+timer: $(TARGET) $(TIMER_TARGET) # Rule to run the executable and time performance
 	./performance_timer ./main
+
+leaks: $(TARGET) # Rule to run the executable and check for memory leaks
+	leaks --atExit -- ./main
 
 clean: # Rule to clean up the build
 	rm -f $(OBJS) $(TARGET) $(TIMER_TARGET)
