@@ -7,10 +7,10 @@
 
 int main(void)
 {
-    Nnum *n1 = initNnum(0x11111111);
-    print_num((_num *)n1);
+    _num *n1 = initNnum(0x11111111);
+    n1->print_num(n1);
 
-    free_num((_num *)n1);
+    n1->free_num(n1);
 
     return 0;
 }

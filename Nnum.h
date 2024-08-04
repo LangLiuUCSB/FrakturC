@@ -2,9 +2,7 @@
 #define NNUM_H
 
 #include "_num.h"
-
-#if defined(__ARM_NEON) || defined(__aarch64__)
-#include <arm_neon.h> // SSE2
+#include <arm_neon.h>
 
 typedef struct Nnum
 {
@@ -20,28 +18,13 @@ typedef struct Nnum
     _num operators;
 } Nnum;
 
-Nnum *initNnum(uintmax_t u);
+_num *initNnum(uintmax_t u);
 void free_num(_num *self);
-
 void print_num(_num *self);
-
-_num *Nadd(_num *AN1, _num *AN2);
-void Naddto(_num *self, _num *addend);
-
-_num *Nsub(_num *AN1, _num *AN2);
-void Nsubto(_num *self, _num *subtrahend);
-
-_num *Nmul(_num *AN1, _num *AN2);
-void Nmulto(_num *self, _num *factor);
-
-_num *Nfdiv(_num *AN1, _num *AN2);
-void Nfdivto(_num *self, _num *divisor);
-
-_num *Nmod(_num *AN1, _num *AN2);
-void Nmodto(_num *self, _num *divisor);
-
-#else
-#error "Unsupported architecture. This program requires SSE2 or NEON support."
-#endif
+void addto(_num *self, _num *addend);
+void subto(_num *self, _num *subtrahend);
+void multo(_num *self, _num *factor);
+void fdivto(_num *self, _num *divisor);
+void modto(_num *self, _num *divisor);
 
 #endif
