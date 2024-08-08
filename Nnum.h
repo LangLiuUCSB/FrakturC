@@ -6,27 +6,18 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef struct
+typedef struct Nnum
 {
     uint8_t *bytes;
     size_t size;
 } Nnum;
 
-Nnum initNnum(uintmax_t i);
+Nnum *initNnum(uintmax_t ju);
+Nnum *copyNnum(Nnum *orig);
 
-void printNnum(Nnum n);
+void freeNnum(Nnum *self);
+void printNnum(Nnum *self);
 
-Nnum copyNnum(Nnum n);
-
-Nnum addNnums(Nnum n1, Nnum n2);
-Nnum subtractNnums(Nnum n1, Nnum n2);
-
-Nnum leftByteShiftNnum(Nnum n, size_t shiftPower);
-Nnum rightByteShiftNnum(Nnum n, size_t shiftPower);
-
-Nnum doubleNnum(Nnum n);
-Nnum halfNnum(Nnum n);
-Nnum leftBitShiftNnum(Nnum n, uint8_t shiftPower);
-Nnum rightBitShiftNnum(Nnum n, uint8_t shiftPower);
+// void addtoNnums(Nnum *self, Nnum *addend);
 
 #endif

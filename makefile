@@ -6,7 +6,7 @@ TARGET = main # Define the target executable
 
 TIMER_TARGET = performance_timer
 
-SRCS = main.c utils.c Nnum.c # Define the source files
+SRCS = main.c utils.c _num.c Nnum.c # Define the source files
 
 OBJS = $(SRCS:.c=.o) # Define the object files
 
@@ -24,8 +24,11 @@ $(TIMING_TARGET): timing_wrapper.o
 run: $(TARGET) # Rule to run the executable
 	./main
 
-timer: $(TARGET) $(TIMER_TARGET) # Rule to run the executable
+timer: $(TARGET) $(TIMER_TARGET) # Rule to run the executable and time performance
 	./performance_timer ./main
+
+leaks: $(TARGET) # Rule to run the executable and check for memory leaks
+	leaks --atExit -- ./main
 
 clean: # Rule to clean up the build
 	rm -f $(OBJS) $(TARGET) $(TIMER_TARGET)
