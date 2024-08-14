@@ -24,7 +24,7 @@ int main(void)
     printf("%jd\n", -72057594037927935);
     printb_num(n1);
     printf("size: %zu\n", ((Znum *)n1->data)->size);
-    printf("bytes[7]: %x\n", ((Znum *)n1->data)->bytes[7]);
+    printf("bytes[7]: %x\n", ((Znum *)n1->data)->bytes[0]);
 
     free_num(n1);
 
