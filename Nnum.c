@@ -229,6 +229,45 @@ void Naddto(Nnum *self, Nnum *addend) // TODO improve: support SIMD
     // TODO realloc fail catcher
 }
 
+void NaddtoSIMD(Nnum *self, Nnum *addend) // TODO improve: support SIMD
+{
+    if (addend->size == 0) // additive identity check
+        return;
+    if (self->size == 0) // pseudo clone check
+    {
+        Nfree(self);
+        self = Nclone(addend);
+        return;
+    }
+    if (self->size < addend->size) // preop resize check
+    {
+        self->b8 = realloc(self->b8, addend->size);
+        if (self->b8)
+        {
+            perror("Error: memory allocation for clone Nnum failed");
+            free(self->b8);
+            exit(EXIT_FAILURE);
+        }
+        // memset(self->b8 + self->size, 0, self->b8 + addend->size); //! bug
+        self->size = addend->size;
+    }
+    // addition
+    uint8_t carry = 0;
+    for (size_t i = 0; i < (addend->size >> 4); ++i)
+    {
+        self->b64x2[i] = vaddq_u64(self->b64x2[i], addend->b64x2[i]);
+        carry = self->b64[2 * i] + carry <= addend->b8[2 * i];
+        carry = self->b64[2 * i + 1] + carry <= addend->b8[2 * i + 1];
+    }
+    // TODO b64 b32 b16 b8
+    if (carry) // postop resize check
+        ++(self->b8 = (uint8_t *)realloc(self->b8, ++self->size))[self->size - 1];
+    // TODO realloc fail catcher
+}
+/*
+
+*/
+
 void Nsubto(Nnum *self, Nnum *subtrahend) // TODO improve: support SIMD
 {
     if (self->size < subtrahend->size) // preop negative check

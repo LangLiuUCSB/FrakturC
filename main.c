@@ -18,8 +18,6 @@ int main(void)
 
         freeZnum(n1);
     }
-
-    */
     _num *n1 = wrapNnum(UINTMAX_MAX);
     Nprintx(((Nnum *)n1->data));
 
@@ -32,12 +30,6 @@ int main(void)
 
     free_num(n1);
     free_num(n2);
-
-    /*
-    for (size_t i = 0; i < 15; ++i)
-    {
-        printf("%zx\n", b8x[i]);
-    }
     */
 
     return EXIT_SUCCESS;

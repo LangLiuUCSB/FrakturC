@@ -14,7 +14,7 @@ typedef struct Nnum
         uint16_t *b16;
         uint32_t *b32;
         uint64_t *b64;
-        uint8x16_t *b8x16;
+        uint64x2_t *b64x2;
     };
     size_t size;
 } Nnum;
