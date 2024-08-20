@@ -4,6 +4,13 @@
     "stdlib.h": "c",
     "string.h": "c",
     "stdint.h": "c",
-    "initializer_list": "c"
+    "initializer_list": "c",
+    "utils.h": "c",
+    "type_traits": "cpp",
+    "new": "cpp",
+    "nnum.h": "c",
+    "ast.h": "c",
+    "arm_neon.h": "c",
+    "mast.h": "c"
   }
 }

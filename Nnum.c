@@ -2,128 +2,269 @@
 
 #define help printf("helpNnum\n")
 
-Nnum *initNnum(uintmax_t ju)
+// TODO #if defined(__ARM_NEON) || defined(__aarch64__)
+
+Nnum *Ninit(uintmax_t ju) //* questionable need for SIMD support
 {
     Nnum *newNnum = malloc(sizeof(Nnum)); // alloc Nnum
-
-    if (!newNnum) // alloc fail check
-        return NULL;
-
+    if (!newNnum)
+    {
+        perror("Error: memory allocation for new Nnum failed");
+        exit(EXIT_FAILURE);
+    }
     // init .size and alloc .bytes
     uint8_t size = 0;
     for (uintmax_t i = ju; i; i >>= 8)
         ++size;
-    newNnum->bytes = (uint8_t *)malloc(newNnum->size = size);
-
+    newNnum->b8 = (uint8_t *)malloc(newNnum->size = size);
     // init bytes
     for (uint8_t i = 0; ju; ju >>= 8)
-        newNnum->bytes[i++] = ju & 0xFF;
-
+        newNnum->b8[i++] = ju & 0xFF;
     return newNnum;
 }
 
-Nnum *cloneNnum(Nnum *orig)
+Nnum *Nclone(Nnum *orig) // TODO improve: support SIMD
 {
     if (!orig) // original existence check
         return NULL;
     Nnum *copyNnum = malloc(sizeof(Nnum)); // alloc Nnum
-
-    if (!copyNnum) // alloc fail check
-        return NULL;
-
-    copyNnum->bytes = (uint8_t *)malloc(copyNnum->size = orig->size); // init .size and alloc .bytes
-
-    for (uint8_t i = 0; i < orig->size; ++i) // init bytes
-        copyNnum->bytes[i] = orig->bytes[i];
-
+    if (!copyNnum)
+    {
+        perror("Error: memory allocation for clone Nnum failed");
+        exit(EXIT_FAILURE);
+    }
+    // init .size and alloc .bytes
+    copyNnum->b8 = (uint8_t *)malloc(copyNnum->size = orig->size);
+    // init bytes
+    for (uint8_t i = 0; i < orig->size; ++i)
+        copyNnum->b8[i] = orig->b8[i];
     return copyNnum;
 }
 
-void freeNnum(Nnum *self)
+void Nfree(Nnum *self)
 {
-    free(self->bytes);
-    free(self);
+    if (self)
+    {
+        if (self->b8)
+        {
+            free(self->b8);
+            self->b8 = NULL;
+        }
+        free(self);
+        self = NULL;
+    }
 }
 
-void printbNnum(Nnum *self)
+void Nprintx(Nnum *self)
 {
-    printf("0b");
-    if (!self->size) // .size greater than zero
+    switch (self->size & 7)
     {
-        printf("0\n");
-        return;
+    case 0:
+        printf("0x");
+        break;
+    case 1:
+        printf("0x%x",
+               self->b8[self->size - 1]);
+        break;
+    case 2:
+        printf("0x%x",
+               self->b16[(self->size >> 1) - 1]);
+        break;
+    case 3:
+        printf("0x%x%x",
+               self->b8[self->size - 1],
+               self->b16[(self->size >> 1) - 1]);
+        break;
+    case 4:
+        printf("0x%x",
+               self->b32[(self->size >> 2) - 1]);
+        break;
+    case 5:
+        printf("0x%x%x",
+               self->b8[self->size - 1],
+               self->b32[(self->size >> 2) - 1]);
+        break;
+    case 6:
+        printf("0x%x%x",
+               self->b16[(self->size >> 1) - 1],
+               self->b32[(self->size >> 2) - 1]);
+        break;
+    case 7:
+        printf("0x%x%x%x",
+               self->b8[self->size - 1],
+               self->b16[(self->size >> 1) - 1],
+               self->b32[(self->size >> 2) - 1]);
+        break;
     }
-    size_t i = self->size - 1;
-    uint8_t j = 7;
-    // print most significant byte
-    for (uint8_t noLeadingZero = 0; j < UINT8_MAX; --j)
-        if (noLeadingZero || (noLeadingZero = (self->bytes[i] >> j) & 0x01))
-            printf("%u", (self->bytes[i] >> j) & 0x01);
-    // print other bytes
-    for (--i; i != SIZE_MAX; --i)
-        for (printf(","), j = 7; j < UINT8_MAX; --j)
-            printf("%u", (self->bytes[i] >> j) & 0x01);
+    for (size_t i = (self->size >> 3) - 1; i != SIZE_MAX; --i)
+        printf("%llx", self->b64[i]);
     printf("\n");
 }
 
-uint8_t isEqualNnum(Nnum *self, Nnum *other)
+uint8_t Nequal(Nnum *self, Nnum *other)
 {
     if (self->size != other->size)
         return 0;
-    for (size_t i = self->size - 1; i != SIZE_MAX; --i)
-        if (self->bytes[i] != other->bytes[i])
+    for (size_t i = (self->size >> 3) - 1; i != SIZE_MAX; --i)
+        if (self->b64[i] != other->b64[i])
             return 0;
-    return 1;
+    switch (self->size & 7)
+    {
+    case 0:
+        return 1;
+    case 1:
+        return self->b8[self->size - 1] == other->b8[self->size - 1];
+    case 2:
+        return self->b16[(self->size >> 1) - 1] == other->b16[(self->size >> 1) - 1];
+    case 3:
+        return self->b16[(self->size >> 1) - 1] == other->b16[(self->size >> 1) - 1] &&
+               self->b8[self->size - 1] == other->b8[self->size - 1];
+    case 4:
+        return self->b32[(self->size >> 2) - 1] == other->b32[(self->size >> 2) - 1];
+    case 5:
+        return self->b32[(self->size >> 2) - 1] == other->b32[(self->size >> 2) - 1] &&
+               self->b8[self->size - 1] == other->b8[self->size - 1];
+    case 6:
+        return self->b32[(self->size >> 2) - 1] == other->b32[(self->size >> 2) - 1] &&
+               self->b16[(self->size >> 1) - 1] == other->b16[(self->size >> 1) - 1];
+    case 7:
+        return self->b32[(self->size >> 2) - 1] == other->b32[(self->size >> 2) - 1] &&
+               self->b16[(self->size >> 1) - 1] == other->b16[(self->size >> 1) - 1] &&
+               self->b8[self->size - 1] == other->b8[self->size - 1];
+    }
+    perror("Error: Nequal failed");
+    exit(EXIT_FAILURE);
+    return 0;
 }
 
-void addtoNnums(Nnum *self, Nnum *addend)
+uint8_t Nnotequal(Nnum *self, Nnum *other)
 {
-    if (self->size < addend->size) // preop resize check
-        self->bytes = realloc(self->bytes, (self->size = addend->size));
+    if (self->size != other->size)
+        return 1;
+    for (size_t i = (self->size >> 3) - 1; i != SIZE_MAX; --i)
+        if (self->b64[i] != other->b64[i])
+            return 1;
+    switch (self->size & 7)
+    {
+    case 0:
+        return 0;
+    case 1:
+        return self->b8[self->size - 1] != other->b8[self->size - 1];
+    case 2:
+        return self->b16[(self->size >> 1) - 1] != other->b16[(self->size >> 1) - 1];
+    case 3:
+        return self->b16[(self->size >> 1) - 1] != other->b16[(self->size >> 1) - 1] ||
+               self->b8[self->size - 1] != other->b8[self->size - 1];
+    case 4:
+        return self->b32[(self->size >> 2) - 1] != other->b32[(self->size >> 2) - 1];
+    case 5:
+        return self->b32[(self->size >> 2) - 1] != other->b32[(self->size >> 2) - 1] ||
+               self->b8[self->size - 1] != other->b8[self->size - 1];
+    case 6:
+        return self->b32[(self->size >> 2) - 1] != other->b32[(self->size >> 2) - 1] ||
+               self->b16[(self->size >> 1) - 1] != other->b16[(self->size >> 1) - 1];
+    case 7:
+        return self->b32[(self->size >> 2) - 1] != other->b32[(self->size >> 2) - 1] ||
+               self->b16[(self->size >> 1) - 1] != other->b16[(self->size >> 1) - 1] ||
+               self->b8[self->size - 1] != other->b8[self->size - 1];
+    }
+    perror("Error: Nnotequal failed");
+    exit(EXIT_FAILURE);
+    return 0;
+}
 
+uint8_t Ngreater(Nnum *self, Nnum *other) // TODO finish
+{
+    printf("Unfinished: uint8_t Ngreater(Nnum *self, Nnum *other)\n");
+    (void)self, (void)other;
+    return 0;
+}
+
+uint8_t Nlesser(Nnum *self, Nnum *other) // TODO finish
+{
+    printf("Unfinished: uint8_t Nlesser(Nnum *self, Nnum *other)\n");
+    (void)self, (void)other;
+    return 0;
+}
+
+uint8_t Ngreaterorequal(Nnum *self, Nnum *other) // TODO finish
+{
+    printf("Unfinished: uint8_t Ngreaterorequal(Nnum *self, Nnum *other)\n");
+    (void)self, (void)other;
+    return 0;
+}
+
+uint8_t NlesserorequalNnum(Nnum *self, Nnum *other) // TODO finish
+{
+    printf("Unfinished: uint8_t NlesserorequalNnum(Nnum *self, Nnum *other)\n");
+    (void)self, (void)other;
+    return 0;
+}
+
+void Naddto(Nnum *self, Nnum *addend) // TODO improve: support SIMD
+{
+    if (addend->size == 0) // additive identity check
+        return;
+    if (self->size == 0) // pseudo clone check
+    {
+        Nfree(self);
+        self = Nclone(addend);
+        return;
+    }
+    if (self->size < addend->size) // preop resize check
+        self->b8 = realloc(self->b8, (self->size = addend->size));
+    // TODO realloc fail catcher
     // addition
     uint8_t carry = 0;
     for (size_t i = 0; i < addend->size; ++i)
-        carry = (self->bytes[i] += addend->bytes[i] + carry) < addend->bytes[i];
+    {
+        // self->b8[i] += addend->b8[i] + carry;
+        // carry = addend->b8[i] >= self->b8[i];
+        carry = (self->b8[i] += addend->b8[i] + carry) <= addend->b8[i];
+    }
 
     if (carry) // postop resize check
-        (self->bytes = (uint8_t *)realloc(self->bytes, ++self->size))[self->size - 1] = 1;
+        (self->b8 = (uint8_t *)realloc(self->b8, ++self->size))[self->size - 1] = 1;
+
+    // TODO realloc fail catcher
 }
 
-void subtoNnums(Nnum *self, Nnum *subtrahend)
+void Nsubto(Nnum *self, Nnum *subtrahend) // TODO improve: support SIMD
 {
     if (self->size < subtrahend->size) // preop negative check
     {
-        fprintf(stderr, "Error: Nnum cannot store difference values lesser than zero\n");
-        exit(1);
+        perror("Error: memory allocation for clone Nnum failed");
+        exit(EXIT_FAILURE);
     }
 
     // subtraction
     uint8_t borrow = 0;
     size_t i = 0;
     for (uint8_t currbyte; i < subtrahend->size; ++i)
-        borrow = (currbyte = self->bytes[i]) < (self->bytes[i] -= subtrahend->bytes[i] + borrow);
+        borrow = (currbyte = self->b8[i]) < (self->b8[i] -= subtrahend->b8[i] + borrow);
     while (borrow && i < self->size)
-        borrow = --self->bytes[i++] == 0xFF;
+        borrow = --self->b8[i++] == 0xFF;
 
     if (borrow) // postop negative check
     {
-        fprintf(stderr, "Error: Nnum cannot store difference values lesser than zero\n");
-        exit(1);
+        perror("Error: Nsubto cannot return difference lesser than zero");
+        exit(EXIT_FAILURE);
     }
 
     // resize away empty bytes
     size_t empties = 0;
-    for (--i; !self->bytes[i] && i < SIZE_MAX; --i)
+    for (--i; !self->b8[i] && i < SIZE_MAX; --i)
         ++empties;
-    self->bytes = (uint8_t *)realloc(self->bytes, self->size -= empties);
+    self->b8 = (uint8_t *)realloc(self->b8, self->size -= empties);
+    // TODO realloc catcher
 }
 
-void multoNnums(Nnum *self, Nnum *factor)
+void Nmulto(Nnum *self, Nnum *factor) // TODO finish
 {
+    printf("Unfinished: void Nmulto(Nnum *self, Nnum *factor)\n");
     if (!factor->size) // zero factor check
     {
-        self->bytes = (uint8_t *)realloc(self->bytes, self->size -= 0);
+        self->b8 = (uint8_t *)realloc(self->b8, self->size -= 0);
         return;
     }
 
@@ -132,4 +273,18 @@ void multoNnums(Nnum *self, Nnum *factor)
     // multiplication
 
     // postop resize check
+}
+
+void Ndivto(Nnum *self, Nnum *divisor) // TODO finish
+{
+    printf("Unfinished: void Ndivto(Nnum *self, Nnum *divisor)\n");
+    (void)self, (void)divisor;
+    // division
+}
+
+void Nmodto(Nnum *self, Nnum *divisor) // TODO finish
+{
+    printf("Unfinished: void Ndivto(Nnum *self, Nnum *divisor)\n");
+    (void)self, (void)divisor;
+    // modulus
 }

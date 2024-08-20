@@ -7,9 +7,10 @@ int main(void)
 {
 
     /*
+    Znum *n1;
     for (intmax_t jd = INTMAX_MIN + 1; jd; jd /= 2)
     {
-        Znum *n1 = initZnum(jd);
+        n1 = initZnum(jd);
 
         printf("%jd\n", jd);
         printbZnum(n1);
@@ -19,14 +20,25 @@ int main(void)
     }
 
     */
-    _num *n1 = wrapZnum(-72057594037927935);
+    _num *n1 = wrapNnum(UINTMAX_MAX);
+    Nprintx(((Nnum *)n1->data));
 
-    printf("%jd\n", -72057594037927935);
-    printb_num(n1);
-    printf("size: %zu\n", ((Znum *)n1->data)->size);
-    printf("bytes[7]: %x\n", ((Znum *)n1->data)->bytes[0]);
+    _num *n2 = wrapNnum(UINTMAX_MAX);
+    Nprintx(((Nnum *)n2->data));
+
+    addto_num(n1, n2);
+    Nprintx(((Nnum *)n1->data));
+    printf("size: %zx\n\n", ((Nnum *)n1->data)->size);
 
     free_num(n1);
+    free_num(n2);
 
-    return 0;
+    /*
+    for (size_t i = 0; i < 15; ++i)
+    {
+        printf("%zx\n", b8x[i]);
+    }
+    */
+
+    return EXIT_SUCCESS;
 }

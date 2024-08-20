@@ -6,7 +6,7 @@ TARGET = main # Define the target executable
 
 TIMER_TARGET = performance_timer
 
-SRCS = main.c utils.c _num.c Nnum.c Znum.c# Define the source files
+SRCS = main.c utils.c MAST.c _num.c Nnum.c Znum.c Qnum.c Rnum.c Cnum.c # Define the source files
 
 OBJS = $(SRCS:.c=.o) # Define the object files
 

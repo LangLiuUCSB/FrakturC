@@ -3,86 +3,95 @@
 _num *wrapNnum(uintmax_t ju)
 {
     _num *newNnum = malloc(sizeof(_num));
-    newNnum->type = 'N';
-    newNnum->data = initNnum(ju);
+    newNnum->numType = 'N';
+    newNnum->data = Ninit(ju);
     return newNnum;
 }
 
 _num *wrapZnum(intmax_t jd)
 {
-    _num *newNnum = malloc(sizeof(_num));
-    newNnum->type = 'Z';
-    newNnum->data = initZnum(jd);
-    return newNnum;
+    _num *newZnum = malloc(sizeof(_num));
+    newZnum->numType = 'Z';
+    newZnum->data = Zinit(jd);
+    return newZnum;
 }
 
-_num *clone_num(_num *orig)
+_num *clone_num(_num *orig) // TODO finish
 {
-    _num *new_num = malloc(sizeof(_num));
-    if (!new_num)
+    _num *copy_num = malloc(sizeof(_num));
+    if (!copy_num)
         return NULL;
-    switch (new_num->type = orig->type)
+    switch (copy_num->numType = orig->numType)
     {
     case 'N':
-        new_num->data = cloneNnum((Nnum *)orig->data);
-        return new_num;
+        copy_num->data = Nclone((Nnum *)orig->data);
+        return copy_num;
     case 'Z':
-        new_num->data = cloneZnum((Znum *)orig->data);
-        return new_num;
+        copy_num->data = Zclone((Znum *)orig->data);
+        return copy_num;
     case 'Q':
-        // new_num->data = cloneQnum((Qnum *)orig->data);
-        return new_num;
+        // copy_num->data = Qclone((Qnum *)orig->data);
+        return copy_num;
     case 'R':
-        // new_num->data = cloneRnum((Rnum *)orig->data);
-        return new_num;
+        // copy_num->data = Rclone((Rnum *)orig->data);
+        return copy_num;
     case 'C':
-        // new_num->data = cloneCnum((Cnum *)orig->data);
-        return new_num;
+        // copy_num->data = Cclone((Cnum *)orig->data);
+        return copy_num;
     }
     return NULL;
 }
 
-void free_num(_num *self)
+void free_num(_num *self) // TODO finish
 {
-    switch (self->type)
+    switch (self->numType)
     {
     case 'N':
-        freeNnum((Nnum *)self->data);
+        Nfree((Nnum *)self->data);
         break;
     case 'Z':
-        freeZnum((Znum *)self->data);
+        Zfree((Znum *)self->data);
         break;
     case 'Q':
-        // freeQnum((Qnum *)self->data);
+        // Qfree((Qnum *)self->data);
         break;
     case 'R':
-        // freeRnum((Rnum *)self->data);
+        // Rfree((Rnum *)self->data);
         break;
     case 'C':
-        // freeCnum((Cnum *)self->data);
+        // Cfree((Cnum *)self->data);
         break;
     }
     free(self);
 }
 
-void printb_num(_num *self)
+void printx_num(_num *self) // TODO finish
 {
-    switch (self->type)
+    switch (self->numType)
     {
     case 'N':
-        printbNnum((Nnum *)self->data);
+        Nprintx((Nnum *)self->data);
         return;
     case 'Z':
-        printbZnum((Znum *)self->data);
+        Zprintx((Znum *)self->data);
         return;
     case 'Q':
-        // printbQnum((Qnum *)self->data);
+        // Qprintx((Qnum *)self->data);
         return;
     case 'R':
-        // printbRnum((Rnum *)self->data);
+        // Rprintx((Rnum *)self->data);
         return;
     case 'C':
-        // printbCnum((Cnum *)self->data);
+        // Cprintbx((Cnum *)self->data);
+        return;
+    }
+}
+
+void addto_num(_num *self, _num *other) // TODO finish
+{
+    if (self->numType == 'N' && other->numType == 'N')
+    {
+        Naddto((Nnum *)self->data, (Nnum *)other->data);
         return;
     }
 }
