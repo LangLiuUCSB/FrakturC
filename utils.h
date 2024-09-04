@@ -8,4 +8,6 @@
 
 size_t bytes_alloc_max(void);
 
+uint64_t fibonnaci(size_t n);
+
 #endif

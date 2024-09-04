@@ -31,4 +31,6 @@ void multo_num(_num *self, _num *factor);
 void divto_num(_num *self, _num *divisor);
 void modto_num(_num *self, _num *divisor);
 
+void print_size(_num *self);
+
 #endif

@@ -95,3 +95,25 @@ void addto_num(_num *self, _num *other) // TODO finish
         return;
     }
 }
+
+void print_size(_num *self)
+{
+    switch (self->numType)
+    {
+    case 'N':
+        printf("Nsize: %zu", ((Nnum *)self->data)->size);
+        return;
+    case 'Z':
+        printf("Zsize: %zu", ((Znum *)self->data)->size);
+        return;
+    case 'Q':
+        // numerator size and denominator size
+        return;
+    case 'R':
+        // size of AST
+        return;
+    case 'C':
+        // size of real AST and imaginary AST
+        return;
+    }
+}

@@ -9,6 +9,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Usage: %s <executable>\n", argv[0]);
         return 1;
     }
+    printf("\n");
 
     struct timeval start, end;
     gettimeofday(&start, NULL);

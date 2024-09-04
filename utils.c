@@ -17,3 +17,23 @@ size_t bytes_alloc_max(void)
     }
     return size;
 }
+
+uint64_t fibonnaci(size_t n)
+{
+    if (!n)
+        return 0;
+
+    if (n < 3)
+        return 1;
+
+    uint64_t fib1 = 1;
+    uint64_t fib2 = 1;
+    uint64_t fib3 = fib1 + fib2;
+    for (size_t i = 3; i < n; ++i)
+    {
+        fib1 = fib2;
+        fib2 = fib3;
+        fib3 = fib1 + fib2;
+    }
+    return fib3;
+}

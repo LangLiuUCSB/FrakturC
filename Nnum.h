@@ -32,6 +32,7 @@ uint8_t Ngreaterorequal(Nnum *self, Nnum *other);
 uint8_t Nlesserorequal(Nnum *self, Nnum *other);
 
 void Naddto(Nnum *self, Nnum *addend);
+
 void Nsubto(Nnum *self, Nnum *subtrahend);
 void Nmulto(Nnum *self, Nnum *factor);
 void Ndivto(Nnum *self, Nnum *divisor);
