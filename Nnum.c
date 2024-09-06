@@ -23,7 +23,7 @@ Nnum *Ninit(uintmax_t ju) //* questionable need for SIMD support
     return newNnum;
 }
 
-Nnum *Nclone(Nnum *orig) // TODO improve: support SIMD
+Nnum *Nclone(Nnum *orig)
 {
     if (!orig) // original existence check
         return NULL;
@@ -38,7 +38,44 @@ Nnum *Nclone(Nnum *orig) // TODO improve: support SIMD
     // init bytes
     for (uint8_t i = 0; i < orig->size; ++i)
         copyNnum->b8[i] = orig->b8[i];
-    return copyNnum;
+
+    for (uint8_t i = 0; i < orig->size >> 3; ++i)
+        copyNnum->b64[i] = orig->b64[i];
+
+    // BBBBBBBBB
+    switch (orig->size & 7)
+    {
+    case 0:
+        return copyNnum;
+    case 1:
+        copyNnum->b8[orig->size - 1] = orig->b8[orig->size - 1];
+        return copyNnum;
+    case 2:
+        copyNnum->b16[(orig->size >> 1) - 1] = orig->b16[(orig->size >> 1) - 1];
+        return copyNnum;
+    case 3:
+        copyNnum->b16[(orig->size >> 1) - 1] = orig->b16[(orig->size >> 1) - 1];
+        copyNnum->b8[orig->size - 1] = orig->b8[orig->size - 1];
+        return copyNnum;
+    case 4:
+        copyNnum->b32[(orig->size >> 2) - 1] = orig->b32[(orig->size >> 2) - 1];
+        return copyNnum;
+    case 5:
+        copyNnum->b32[(orig->size >> 2) - 1] = orig->b32[(orig->size >> 2) - 1];
+        copyNnum->b8[orig->size - 1] = orig->b8[orig->size - 1];
+        return copyNnum;
+    case 6:
+        copyNnum->b32[(orig->size >> 2) - 1] = orig->b32[(orig->size >> 2) - 1];
+        copyNnum->b16[(orig->size >> 1) - 1] = orig->b16[(orig->size >> 1) - 1];
+        return copyNnum;
+    case 7:
+        copyNnum->b32[(orig->size >> 2) - 1] = orig->b32[(orig->size >> 2) - 1];
+        copyNnum->b16[(orig->size >> 1) - 1] = orig->b16[(orig->size >> 1) - 1];
+        copyNnum->b8[orig->size - 1] = orig->b8[orig->size - 1];
+        return copyNnum;
+    }
+    perror("Error: Nclone failed");
+    return NULL;
 }
 
 void Nfree(Nnum *self)
@@ -147,7 +184,6 @@ uint8_t Nequal(Nnum *self, Nnum *other)
                self->b8[self->size - 1] == other->b8[self->size - 1];
     }
     perror("Error: Nequal failed");
-    exit(EXIT_FAILURE);
     return 0;
 }
 
@@ -215,7 +251,7 @@ uint8_t NlesserorequalNnum(Nnum *self, Nnum *other) // TODO finish
     return 0;
 }
 
-void Naddto(Nnum *self, Nnum *addend)
+void Naddto(Nnum *self, Nnum *addend) // TODO optimization test: partial sum algorithm vs traditional sum algorithm
 {
     if (addend->size == 0) // additive identity check
         return;
@@ -241,9 +277,11 @@ void Naddto(Nnum *self, Nnum *addend)
     for (size_t i = 0; i < (addend->size >> 4); ++i)
     {
         self->b64x2[i] = vaddq_u64(self->b64x2[i], addend->b64x2[i]);
+
         self->b64[2 * i] += carry;
         carry = (self->b64[2 * i] < addend->b64[2 * i]) ||
                 (carry && (self->b64[2 * i] == addend->b64[2 * i]));
+
         self->b64[2 * i + 1] += carry;
         carry = (self->b64[2 * i + 1] < addend->b64[2 * i + 1]) ||
                 (carry && (self->b64[2 * i + 1] == addend->b64[2 * i + 1]));
@@ -458,7 +496,11 @@ void Nsubto(Nnum *self, Nnum *subtrahend) // TODO improve: support SIMD
     uint8_t borrow = 0;
     size_t i = 0;
     for (uint8_t currbyte; i < subtrahend->size; ++i)
-        borrow = (currbyte = self->b8[i]) < (self->b8[i] -= subtrahend->b8[i] + borrow); //! bug borrow comparison
+    {
+        self->b8[i] -= (subtrahend->b8[i] + borrow);
+        borrow = (currbyte = self->b8[i]) < (self->b8[i]) ||
+                 (borrow && (self->b8[i]) == subtrahend->b8[i]);
+    }
     while (borrow && i < self->size)
         borrow = --self->b8[i++] == 0xFF;
 
