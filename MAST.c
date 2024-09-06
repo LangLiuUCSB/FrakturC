@@ -1,5 +1,6 @@
 #include "MAST.h"
 
+
 MASTnode *numNode(Nnum *n)
 {
     MASTnode *newNode = (MASTnode *)malloc(sizeof(MASTnode));
@@ -67,3 +68,4 @@ void printMASTtree(MASTnode *rootnode) // TODO finish
     printf("Unfinished: void printMASTtree(MASTnode *rootnode)\n");
     (void)rootnode;
 }
+

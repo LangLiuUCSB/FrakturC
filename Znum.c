@@ -124,7 +124,7 @@ void Zprintx(Znum *self)
         break;
     }
     for (size_t i = (self->size >> 3) - 1; i != SIZE_MAX; --i)
-        printf("%llx", self->b64[i]);
+        printf("%lx", self->b64[i]);
     printf("\n");
 }
 

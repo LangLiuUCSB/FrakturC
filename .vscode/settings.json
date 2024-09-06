@@ -11,6 +11,7 @@
     "nnum.h": "c",
     "ast.h": "c",
     "arm_neon.h": "c",
-    "mast.h": "c"
+    "mast.h": "c",
+    "immintrin.h": "c"
   }
 }

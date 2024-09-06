@@ -6,11 +6,13 @@
 #include "Qnum.h"
 #include "Rnum.h"
 #include "Cnum.h"
+
 typedef struct _num
 {
     char numType;
     void *data;
 } _num;
+
 
 _num *wrapNnum(uintmax_t ju);
 _num *wrapZnum(intmax_t jd);

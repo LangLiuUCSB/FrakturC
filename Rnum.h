@@ -4,9 +4,6 @@
 #include "utils.h"
 #include "MAST.h"
 
-// TODO #if defined(__ARM_NEON) || defined(__aarch64__)
-#include <arm_neon.h> // SSE2
-
 typedef struct Rnum
 {
     MASTnode *exprRoot;

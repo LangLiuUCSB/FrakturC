@@ -5,9 +5,6 @@
 #include "Nnum.h"
 #include "Znum.h"
 
-// TODO #if defined(__ARM_NEON) || defined(__aarch64__)
-#include <arm_neon.h> // SSE2
-
 typedef struct Qnum
 {
     Znum *numerator;
