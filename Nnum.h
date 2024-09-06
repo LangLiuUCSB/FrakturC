@@ -3,7 +3,7 @@
 
 #include "utils.h"
 
-#if defined(_x86_64) || defined(_M_X64) || defined(i386) || defined(MIX86) 
+#if defined(_x86_64) || defined(_M_X64) || defined(i386) || defined(MIX86)
 #include <immintrin.h>
 #elif defined(ARM_NEON) || defined(__aarch64__)
 #include <arm_neon.h>
@@ -17,16 +17,15 @@ typedef struct Nnum
         uint16_t *b16;
         uint32_t *b32;
         uint64_t *b64;
-        #if defined(_x86_64) || defined(_M_X64) || defined(i386) || defined(MIX86) 
-        __m128i *b64x2;
-        #elif defined(ARM_NEON) || defined(__aarch64__)
-        uint64x2_t *b64x2;
-        #endif
+#if defined(_x86_64) || defined(_M_X64) || defined(i386) || defined(MIX86)
+        __m128i
+#elif defined(ARM_NEON) || defined(__aarch64__)
+        uint64x2_t
+#endif
+            *b64x2;
     };
     size_t size;
 } Nnum;
-
-
 
 Nnum *Ninit(uintmax_t ju);
 Nnum *Nclone(Nnum *orig);
