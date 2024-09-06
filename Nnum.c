@@ -134,7 +134,7 @@ void NprintxV2(Nnum *self) //! bug: significant zeros not printed
         break;
     }
     for (size_t i = (self->size >> 3) - 1; i != SIZE_MAX; --i)
-        printf("%lx", self->b64[i]);
+        printf("%llx", self->b64[i]);
     printf("\n");
 }
 
@@ -276,12 +276,11 @@ void Naddto(Nnum *self, Nnum *addend) // TODO optimization test: partial sum alg
     uint8_t carry = 0;
     for (size_t i = 0; i < (addend->size >> 4); ++i)
     {
-    #if defined(__ARM_NEON) || defined(__aarch64__)
+#if defined(__ARM_NEON) || defined(__aarch64__)
         self->b64x2[i] = vaddq_u64(self->b64x2[i], addend->b64x2[i]);
-    #elif defined(_x86_64) || defined(_M_X64) || defined(i386) || defined(MIX86)
+#elif defined(_x86_64) || defined(_M_X64) || defined(i386) || defined(MIX86)
         self->b64x2[i] = _mm_add_epi32(self->b64x2[i], addend->b64x2[i]);
-    #endif
-    
+#endif
 
         self->b64[2 * i] += carry;
         carry = (self->b64[2 * i] < addend->b64[2 * i]) ||
