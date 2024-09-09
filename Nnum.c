@@ -277,7 +277,7 @@ void Naddto(Nnum *self, Nnum *addend) // TODO optimization test: partial sum alg
     for (size_t i = 0; i < (addend->size >> 4); ++i)
     {
     #if defined(__ARM_NEON) || defined(__aarch64__)
-        self->b64x2[i] = vaddq_u64(self->b64x2[i], addend->b64x2[i]);
+        self->b64x2[i] = vadd_u64(self->b64x2[i], addend->b64x2[i]);
     #elif defined(_x86_64) || defined(_M_X64) || defined(i386) || defined(MIX86)
         self->b64x2[i] = _mm_add_epi32(self->b64x2[i], addend->b64x2[i]);
     #endif
@@ -487,8 +487,10 @@ void NaddtoOLD(Nnum *self, Nnum *addend) //* not used
     }
 }
 
-void Nsubto(Nnum *self, Nnum *subtrahend) // TODO improve: support SIMD
+void Nsubto(Nnum *self, Nnum *subtrahend) // TODO: test for bugs
 {
+    if (subtrahend->size == 0) // subtractive identity check
+        return;
     if (self->size < subtrahend->size) // preop negative check
     {
         perror("Error: Nnum cannot hold negative values\n");
@@ -500,15 +502,159 @@ void Nsubto(Nnum *self, Nnum *subtrahend) // TODO improve: support SIMD
     // subtraction
     uint8_t borrow = 0;
     size_t i = 0;
-    for (uint8_t currbyte; i < subtrahend->size; ++i)
+    size_t j = 0;
+    for (uint8_t currbyte; i < subtrahend->size; ++i, ++j)
     {
-        self->b8[i] -= (subtrahend->b8[i] + borrow);
-        borrow = (currbyte = self->b8[i]) < (self->b8[i]) ||
-                 (borrow && (self->b8[i]) == subtrahend->b8[i]);
+    #if defined(__ARM_NEON) || defined(__aarch64__)
+        self->b64x2[i] = vsub_u64(self->b64x2[i], subtrahend->b64x2[i]);
+    #elif defined(_x86_64) || defined(_M_X64) || defined(i386) || defined(MIX86)
+        self->b64x2[i] = _mm_sub_epi32(self->b64x2[i], subtrahend->b64x2[i]);
+    #endif
+    
+        self->b64[j] -= borrow;
+        borrow = (self->b64[j] > subtrahend->b64[j]) ||
+                (borrow && (self->b64[j] == subtrahend->b64[j]));
+        ++j;
+        self->b64[j] -= borrow;
+        borrow = (self->b64[j] > subtrahend->b64[j]) ||
+                (borrow && (self->b64[j] == subtrahend->b64[j]));
     }
-    while (borrow && i < self->size)
-        borrow = --self->b8[i++] == 0xFF;
-
+    switch (subtrahend->size & 15) // bitwise mod 16
+    {
+    case 0:
+        break;
+    case 1:
+        self->b8[subtrahend->size - 1] -= subtrahend->b8[subtrahend->size - 1] + borrow;
+        borrow = (self->b8[subtrahend->size - 1] > subtrahend->b8[subtrahend->size - 1]) ||
+                (borrow && (self->b8[subtrahend->size - 1] == subtrahend->b8[subtrahend->size - 1]));
+        break;
+    case 2:
+        self->b16[(subtrahend->size >> 1) - 1] -= subtrahend->b16[(subtrahend->size >> 1) - 1] + borrow;
+        borrow = (self->b16[(subtrahend->size >> 1) - 1] > subtrahend->b16[(subtrahend->size >> 1) - 1]) ||
+                (borrow && (self->b16[(subtrahend->size >> 1) - 1] == subtrahend->b16[(subtrahend->size >> 1) - 1]));
+        break;
+    case 3:
+        self->b16[(subtrahend->size >> 1) - 1] -= subtrahend->b16[(subtrahend->size >> 1) - 1] + borrow;
+        borrow = (self->b16[(subtrahend->size >> 1) - 1] > subtrahend->b16[(subtrahend->size >> 1) - 1]) ||
+                (borrow && (self->b16[(subtrahend->size >> 1) - 1] == subtrahend->b16[(subtrahend->size >> 1) - 1]));
+        self->b8[subtrahend->size - 1] -= subtrahend->b8[subtrahend->size - 1] + borrow;
+        borrow = (self->b8[subtrahend->size - 1] > subtrahend->b8[subtrahend->size - 1]) ||
+                (borrow && (self->b8[subtrahend->size - 1] == subtrahend->b8[subtrahend->size - 1]));
+        break;
+    case 4:
+        self->b32[(subtrahend->size >> 2) - 1] -= subtrahend->b32[(subtrahend->size >> 2) - 1] + borrow;
+        borrow = (self->b32[(subtrahend->size >> 2) - 1] > subtrahend->b32[(subtrahend->size >> 2) - 1]) ||
+                (borrow && (self->b32[(subtrahend->size >> 2) - 1] == subtrahend->b32[(subtrahend->size >> 2) - 1]));
+        break;
+    case 5:
+        self->b32[(subtrahend->size >> 2) - 1] -= subtrahend->b32[(subtrahend->size >> 2) - 1] + borrow;
+        borrow = (self->b32[(subtrahend->size >> 2) - 1] > subtrahend->b32[(subtrahend->size >> 2) - 1]) ||
+                (borrow && (self->b32[(subtrahend->size >> 2) - 1] == subtrahend->b32[(subtrahend->size >> 2) - 1]));
+        self->b8[subtrahend->size - 1] -= subtrahend->b8[subtrahend->size - 1] + borrow;
+        borrow = (self->b8[subtrahend->size - 1] > subtrahend->b8[subtrahend->size - 1]) ||
+                (borrow && (self->b8[subtrahend->size - 1] == subtrahend->b8[subtrahend->size - 1]));
+        break;
+    case 6:
+        self->b32[(subtrahend->size >> 2) - 1] -= subtrahend->b32[(subtrahend->size >> 2) - 1] + borrow;
+        borrow = (self->b32[(subtrahend->size >> 2) - 1] > subtrahend->b32[(subtrahend->size >> 2) - 1]) ||
+                (borrow && (self->b32[(subtrahend->size >> 2) - 1] == subtrahend->b32[(subtrahend->size >> 2) - 1]));
+        self->b16[(subtrahend->size >> 1) - 1] -= subtrahend->b16[(subtrahend->size >> 1) - 1] + borrow;
+        borrow = (self->b16[(subtrahend->size >> 1) - 1] > subtrahend->b16[(subtrahend->size >> 1) - 1]) ||
+                (borrow && (self->b16[(subtrahend->size >> 1) - 1] == subtrahend->b16[(subtrahend->size >> 1) - 1]));
+        break;
+    case 7:
+        self->b32[(subtrahend->size >> 2) - 1] -= subtrahend->b32[(subtrahend->size >> 2) - 1] + borrow;
+        borrow = (self->b32[(subtrahend->size >> 2) - 1] > subtrahend->b32[(subtrahend->size >> 2) - 1]) ||
+                (borrow && (self->b32[(subtrahend->size >> 2) - 1] == subtrahend->b32[(subtrahend->size >> 2) - 1]));
+        self->b16[(subtrahend->size >> 1) - 1] -= subtrahend->b16[(subtrahend->size >> 1) - 1] + borrow;
+        borrow = (self->b16[(subtrahend->size >> 1) - 1] > subtrahend->b16[(subtrahend->size >> 1) - 1]) ||
+                (borrow && (self->b16[(subtrahend->size >> 1) - 1] == subtrahend->b16[(subtrahend->size >> 1) - 1]));
+        self->b8[subtrahend->size - 1] -= subtrahend->b8[subtrahend->size - 1] + borrow;
+        borrow = (self->b8[subtrahend->size - 1] > subtrahend->b8[subtrahend->size - 1]) ||
+                (borrow && (self->b8[subtrahend->size - 1] == subtrahend->b8[subtrahend->size - 1]));
+        break;
+    case 8:
+        self->b64[(subtrahend->size >> 3) - 1] -= subtrahend->b64[(subtrahend->size >> 3) - 1] + borrow;
+        borrow = (self->b64[(subtrahend->size >> 3) - 1] > subtrahend->b64[(subtrahend->size >> 3) - 1]) ||
+                (borrow && (self->b64[(subtrahend->size >> 3) - 1] == subtrahend->b64[(subtrahend->size >> 3) - 1]));
+        break;
+    case 9:
+        self->b64[(subtrahend->size >> 3) - 1] -= subtrahend->b64[(subtrahend->size >> 3) - 1] + borrow;
+        borrow = (self->b64[(subtrahend->size >> 3) - 1] > subtrahend->b64[(subtrahend->size >> 3) - 1]) ||
+                (borrow && (self->b64[(subtrahend->size >> 3) - 1] == subtrahend->b64[(subtrahend->size >> 3) - 1]));
+        self->b8[subtrahend->size - 1] -= subtrahend->b8[subtrahend->size - 1] + borrow;
+        borrow = (self->b8[subtrahend->size - 1] > subtrahend->b8[subtrahend->size - 1]) ||
+                (borrow && (self->b8[subtrahend->size - 1] == subtrahend->b8[subtrahend->size - 1]));
+        break;
+    case 10:
+        self->b64[(subtrahend->size >> 3) - 1] -= subtrahend->b64[(subtrahend->size >> 3) - 1] + borrow;
+        borrow = (self->b64[(subtrahend->size >> 3) - 1] > subtrahend->b64[(subtrahend->size >> 3) - 1]) ||
+                (borrow && (self->b64[(subtrahend->size >> 3) - 1] == subtrahend->b64[(subtrahend->size >> 3) - 1]));
+        self->b16[(subtrahend->size >> 1) - 1] -= subtrahend->b16[(subtrahend->size >> 1) - 1] + borrow;
+        borrow = (self->b16[(subtrahend->size >> 1) - 1] > subtrahend->b16[(subtrahend->size >> 1) - 1]) ||
+                (borrow && (self->b16[(subtrahend->size >> 1) - 1] == subtrahend->b16[(subtrahend->size >> 1) - 1]));
+        break;
+    case 11:
+        self->b64[(subtrahend->size >> 3) - 1] -= subtrahend->b64[(subtrahend->size >> 3) - 1] + borrow;
+        borrow = (self->b64[(subtrahend->size >> 3) - 1] > subtrahend->b64[(subtrahend->size >> 3) - 1]) ||
+                (borrow && (self->b64[(subtrahend->size >> 3) - 1] == subtrahend->b64[(subtrahend->size >> 3) - 1]));
+        self->b16[(subtrahend->size >> 1) - 1] -= subtrahend->b16[(subtrahend->size >> 1) - 1] + borrow;
+        borrow = (self->b16[(subtrahend->size >> 1) - 1] > subtrahend->b16[(subtrahend->size >> 1) - 1]) ||
+                (borrow && (self->b16[(subtrahend->size >> 1) - 1] == subtrahend->b16[(subtrahend->size >> 1) - 1]));
+        self->b8[subtrahend->size - 1] -= subtrahend->b8[subtrahend->size - 1] + borrow;
+        borrow = (self->b8[subtrahend->size - 1] > subtrahend->b8[subtrahend->size - 1]) ||
+                (borrow && (self->b8[subtrahend->size - 1] == subtrahend->b8[subtrahend->size - 1]));
+        break;
+    case 12:
+        self->b64[(subtrahend->size >> 3) - 1] -= subtrahend->b64[(subtrahend->size >> 3) - 1] + borrow;
+        borrow = (self->b64[(subtrahend->size >> 3) - 1] > subtrahend->b64[(subtrahend->size >> 3) - 1]) ||
+                (borrow && (self->b64[(subtrahend->size >> 3) - 1] == subtrahend->b64[(subtrahend->size >> 3) - 1]));
+        self->b32[(subtrahend->size >> 2) - 1] -= subtrahend->b32[(subtrahend->size >> 2) - 1] + borrow;
+        borrow = (self->b32[(subtrahend->size >> 2) - 1] > subtrahend->b32[(subtrahend->size >> 2) - 1]) ||
+                (borrow && (self->b32[(subtrahend->size >> 2) - 1] == subtrahend->b32[(subtrahend->size >> 2) - 1]));
+        break;
+    case 13:
+        self->b64[(subtrahend->size >> 3) - 1] -= subtrahend->b64[(subtrahend->size >> 3) - 1] + borrow;
+        borrow = (self->b64[(subtrahend->size >> 3) - 1] > subtrahend->b64[(subtrahend->size >> 3) - 1]) ||
+                (borrow && (self->b64[(subtrahend->size >> 3) - 1] == subtrahend->b64[(subtrahend->size >> 3) - 1]));
+        self->b32[(subtrahend->size >> 2) - 1] -= subtrahend->b32[(subtrahend->size >> 2) - 1] + borrow;
+        borrow = (self->b32[(subtrahend->size >> 2) - 1] > subtrahend->b32[(subtrahend->size >> 2) - 1]) ||
+                (borrow && (self->b32[(subtrahend->size >> 2) - 1] == subtrahend->b32[(subtrahend->size >> 2) - 1]));
+        self->b8[subtrahend->size - 1] -= subtrahend->b8[subtrahend->size - 1] + borrow;
+        borrow = (self->b8[subtrahend->size - 1] > subtrahend->b8[subtrahend->size - 1]) ||
+                (borrow && (self->b8[subtrahend->size - 1] == subtrahend->b8[subtrahend->size - 1]));
+        break;
+    case 14:
+        self->b64[(subtrahend->size >> 3) - 1] -= subtrahend->b64[(subtrahend->size >> 3) - 1] + borrow;
+        borrow = (self->b64[(subtrahend->size >> 3) - 1] > subtrahend->b64[(subtrahend->size >> 3) - 1]) ||
+                (borrow && (self->b64[(subtrahend->size >> 3) - 1] == subtrahend->b64[(subtrahend->size >> 3) - 1]));
+        self->b32[(subtrahend->size >> 2) - 1] -= subtrahend->b32[(subtrahend->size >> 2) - 1] + borrow;
+        borrow = (self->b32[(subtrahend->size >> 2) - 1] > subtrahend->b32[(subtrahend->size >> 2) - 1]) ||
+                (borrow && (self->b32[(subtrahend->size >> 2) - 1] == subtrahend->b32[(subtrahend->size >> 2) - 1]));
+        self->b16[(subtrahend->size >> 1) - 1] -= subtrahend->b16[(subtrahend->size >> 1) - 1] + borrow;
+        borrow = (self->b16[(subtrahend->size >> 1) - 1] > subtrahend->b16[(subtrahend->size >> 1) - 1]) ||
+                (borrow && (self->b16[(subtrahend->size >> 1) - 1] == subtrahend->b16[(subtrahend->size >> 1) - 1]));
+        break;
+    case 15:
+        self->b64[(subtrahend->size >> 3) - 1] -= subtrahend->b64[(subtrahend->size >> 3) - 1] + borrow;
+        borrow = (self->b64[(subtrahend->size >> 3) - 1] > subtrahend->b64[(subtrahend->size >> 3) - 1]) ||
+                (borrow && (self->b64[(subtrahend->size >> 3) - 1] == subtrahend->b64[(subtrahend->size >> 3) - 1]));
+        self->b32[(subtrahend->size >> 2) - 1] -= subtrahend->b32[(subtrahend->size >> 2) - 1] + borrow;
+        borrow = (self->b32[(subtrahend->size >> 2) - 1] > subtrahend->b32[(subtrahend->size >> 2) - 1]) ||
+                (borrow && (self->b32[(subtrahend->size >> 2) - 1] == subtrahend->b32[(subtrahend->size >> 2) - 1]));
+        self->b16[(subtrahend->size >> 1) - 1] -= subtrahend->b16[(subtrahend->size >> 1) - 1] + borrow;
+        borrow = (self->b16[(subtrahend->size >> 1) - 1] > subtrahend->b16[(subtrahend->size >> 1) - 1]) ||
+                (borrow && (self->b16[(subtrahend->size >> 1) - 1] == subtrahend->b16[(subtrahend->size >> 1) - 1]));
+        self->b8[subtrahend->size - 1] -= subtrahend->b8[subtrahend->size - 1] + borrow;
+        borrow = (self->b8[subtrahend->size - 1] > subtrahend->b8[subtrahend->size - 1]) ||
+                (borrow && (self->b8[subtrahend->size - 1] == subtrahend->b8[subtrahend->size - 1]));
+        break;
+    }
+    for (size_t i = subtrahend->size; i < self->size; ++i)
+    {
+        self->b8[i] -= borrow;
+        borrow = !self->b8[i];
+    }
     if (borrow) // postop negative check
     {
         perror("Error: Nsubto cannot return difference lesser than zero");
