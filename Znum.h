@@ -9,6 +9,16 @@
 #include <arm_neon.h>
 #endif
 
+//how it works...
+// -127 -> 1111_1111
+//  127 -> 0111_1111
+//    0 -> 0000_0000
+//   -0 -> 1000_0000 -> error value
+// 2^8 = 256
+// Nnum: 255 -> FF {size = 1}
+// Znum:  255 -> (00000000) FF {size = 2}
+// Znum: -255 -> (00000001) FF {size = 2}
+
 typedef struct Znum
 {
     union
