@@ -1,5 +1,7 @@
 #include "_num.h"
 
+#define help printf("help_num\n")
+
 _num *wrapNnum(uintmax_t ju)
 {
     _num *newNnum = malloc(sizeof(_num));
@@ -67,6 +69,7 @@ void free_num(_num *self) // TODO finish
 
 void printx_num(_num *self) // TODO finish
 {
+    
     switch (self->numType)
     {
     case 'N':
@@ -92,6 +95,15 @@ void addto_num(_num *self, _num *other) // TODO finish
     if (self->numType == 'N' && other->numType == 'N')
     {
         Naddto((Nnum *)self->data, (Nnum *)other->data);
+        return;
+    }
+}
+
+void subto_num(_num *self, _num *subtrahend) //TODO finish
+{
+    if(self->numType == 'N' && subtrahend->numType == 'N')
+    {
+        Nsubto((Nnum *)self->data, (Nnum *)subtrahend->data);
         return;
     }
 }

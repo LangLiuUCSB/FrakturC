@@ -493,17 +493,17 @@ void Nsubto(Nnum *self, Nnum *subtrahend) // TODO: test for bugs
         return;
     if (self->size < subtrahend->size) // preop negative check
     {
-        perror("Error: Nnum cannot hold negative values\n");
+        perror("Error: Nnum cannot hold negative values");
         free(self->b8);
         self->b8 = NULL;
+        self->size = 0;
         return;
     }
 
     // subtraction
     uint8_t borrow = 0;
     size_t i = 0;
-    size_t j = 0;
-    for (uint8_t currbyte; i < subtrahend->size; ++i, ++j)
+    for (size_t j = 0; i < (subtrahend->size >> 4); ++i, ++j)
     {
     #if defined(__ARM_NEON) || defined(__aarch64__)
         self->b64x2[i] = vsub_u64(self->b64x2[i], subtrahend->b64x2[i]);
@@ -518,6 +518,7 @@ void Nsubto(Nnum *self, Nnum *subtrahend) // TODO: test for bugs
         self->b64[j] -= borrow;
         borrow = (self->b64[j] > subtrahend->b64[j]) ||
                 (borrow && (self->b64[j] == subtrahend->b64[j]));
+                
     }
     switch (subtrahend->size & 15) // bitwise mod 16
     {
@@ -657,13 +658,16 @@ void Nsubto(Nnum *self, Nnum *subtrahend) // TODO: test for bugs
     }
     if (borrow) // postop negative check
     {
+        
         perror("Error: Nsubto cannot return difference lesser than zero");
         free(self->b8);
         self->b8 = NULL;
+        self->size = 0;
         return;
     }
 
     // resize away empty bytes
+    
     size_t empties = 0;
     for (--i; !self->b8[i] && i < SIZE_MAX; --i)
         ++empties;

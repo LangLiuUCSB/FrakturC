@@ -12,6 +12,12 @@
     "ast.h": "c",
     "arm_neon.h": "c",
     "mast.h": "c",
-    "immintrin.h": "c"
+    "immintrin.h": "c",
+    "format": "c",
+    "list": "c",
+    "vector": "c",
+    "xhash": "c",
+    "xstring": "c",
+    "xutility": "c"
   }
 }
