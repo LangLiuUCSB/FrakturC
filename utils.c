@@ -38,7 +38,7 @@ uint64_t fibonnaci(size_t n)
     return fib3;
 }
 
-int fibonacci(int n)
+int fibonacciMemo(int n)
 {
     static int fibMemo[100] = {0};
 
