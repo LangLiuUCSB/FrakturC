@@ -37,3 +37,21 @@ uint64_t fibonnaci(size_t n)
     }
     return fib3;
 }
+
+int fibonacci(int n)
+{
+    static int fibMemo[100] = {0};
+
+    if (n <= 1)
+    {
+        return n;
+    }
+
+    if (fibMemo[n] != 0)
+    {
+        return fibMemo[n];
+    }
+
+    fibMemo[n] = fibonacci(n - 1) + fibonacci(n - 2);
+    return fibMemo[n];
+}
